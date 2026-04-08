@@ -10,9 +10,11 @@ interface FadeInProps {
 
 export default function FadeIn({ children, delay = 0, className = "" }: FadeInProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const [mounted, setMounted] = useState(false);
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     const el = ref.current;
     if (!el) return;
     const observer = new IntersectionObserver(
@@ -25,14 +27,20 @@ export default function FadeIn({ children, delay = 0, className = "" }: FadeInPr
     return () => observer.disconnect();
   }, []);
 
+  // Before hydration, render fully visible (no flash of invisible content)
+  const shouldAnimate = mounted;
+  const isVisible = !shouldAnimate || visible;
+
   return (
     <div
       ref={ref}
       className={className}
       style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "none" : "translateY(16px)",
-        transition: `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`,
+        opacity: isVisible ? 1 : 0,
+        transform: isVisible ? "none" : "translateY(16px)",
+        transition: shouldAnimate
+          ? `opacity 0.7s ease ${delay}s, transform 0.7s ease ${delay}s`
+          : "none",
       }}
     >
       {children}
