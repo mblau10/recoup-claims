@@ -16,33 +16,60 @@ export default function Nav() {
     <nav
       className="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
       style={{
-        background: scrolled ? "rgba(255,255,255,0.92)" : "transparent",
-        backdropFilter: scrolled ? "saturate(180%) blur(20px)" : "none",
-        borderBottom: scrolled ? "1px solid rgba(0,0,0,0.06)" : "none",
+        background: scrolled ? "rgba(246, 242, 234, 0.88)" : "transparent",
+        backdropFilter: scrolled ? "saturate(160%) blur(16px)" : "none",
+        borderBottom: scrolled ? "1px solid rgba(10,10,11,0.08)" : "none",
       }}
     >
-      <div className="max-w-[1120px] mx-auto px-6 sm:px-10 py-4 flex justify-between items-center">
+      <div className="max-w-[1240px] mx-auto px-6 sm:px-10 py-4 flex justify-between items-center">
         <a
           href="#"
-          className="font-serif text-[22px] text-recoup-black no-underline font-medium"
-          style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+          className="no-underline flex items-baseline gap-2"
+          style={{ color: "var(--color-recoup-ink)" }}
         >
-          recoup
+          <span
+            className="text-[26px] leading-none"
+            style={{
+              fontFamily: "var(--font-display)",
+              letterSpacing: -0.5,
+            }}
+          >
+            recoup
+          </span>
+          <span
+            className="text-[10px] font-mono uppercase tracking-[0.14em]"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-recoup-ember)",
+            }}
+          >
+            .claims
+          </span>
         </a>
         <div className="flex gap-8 items-center">
-          <div className="hidden sm:flex gap-8">
-            {["How it works", "Pricing", "FAQ"].map((t) => (
+          <div className="hidden sm:flex gap-7">
+            {[
+              { label: "How it works", href: "#how-it-works" },
+              { label: "Pricing", href: "#pricing" },
+              { label: "Advance", href: "#advance" },
+              { label: "FAQ", href: "#faq" },
+            ].map((t) => (
               <a
-                key={t}
-                href={`#${t.toLowerCase().replace(/ /g, "-")}`}
-                className="text-recoup-gray no-underline text-[13px] font-medium hover:text-recoup-black transition-colors"
+                key={t.label}
+                href={t.href}
+                className="no-underline text-[12px] font-medium transition-colors"
+                style={{
+                  color: "var(--color-recoup-muted)",
+                  fontFamily: "var(--font-mono)",
+                  letterSpacing: "0.02em",
+                }}
               >
-                {t}
+                {t.label}
               </a>
             ))}
           </div>
-          <Button href="#calc" variant="dark" className="!px-5 !py-2 !text-[13px]">
-            Get started
+          <Button href="#calc" variant="dark" className="!px-4 !py-2 !text-[12px]">
+            Start →
           </Button>
         </div>
       </div>

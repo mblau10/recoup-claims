@@ -15,9 +15,9 @@ function JsonLd() {
     "@type": "LocalBusiness",
     name: "Recoup",
     description:
-      "Administrative preparation for IEEPA tariff refund recovery through the CAPE portal.",
+      "Zero-upfront IEEPA tariff refund filing through the CBP CAPE portal. $895 per declaration, invoiced only after CBP accepts. Optional non-recourse cash advance.",
     url: "https://recoup.claims",
-    priceRange: "$297–$2,497",
+    priceRange: "$0–$895",
     areaServed: "US",
   };
 
@@ -35,26 +35,26 @@ function JsonLd() {
       },
       {
         "@type": "Question",
-        name: "Do I need a lawyer?",
+        name: "What does \"pay when CBP pays\" mean?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "For the CAPE portal filing, no. CBP built a self-service system. We handle the data preparation and declaration formatting.",
+          text: "We prepare your entry data, draft the CAPE declaration, and file it through a licensed customs broker. You pay nothing until CBP accepts the filing. Then we invoice a flat $895 per declaration — regardless of refund size.",
         },
       },
       {
         "@type": "Question",
-        name: "How does advance funding work?",
+        name: "How does Cash Now work?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We verify your refund amount, then purchase your claim at up to 75% of its value. You receive the cash in days. When CBP pays, we collect. Non-recourse — if CBP reduces the refund, we absorb the risk.",
+          text: "We verify your refund amount and wire up to 85% of it within 72 hours. Our fee is 8.5% of the advance, deducted at funding. It is non-recourse: if CBP reduces the refund, we absorb the shortfall.",
         },
       },
       {
         "@type": "Question",
-        name: "Why flat fee, not a percentage?",
+        name: "Why a flat per-declaration fee instead of a percentage?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Preparing a declaration for a $50K refund takes the same work as $5M. Percentage pricing is a legacy model. We price for the work.",
+          text: "Preparing a declaration for a $50K refund takes the same work as a $5M refund. Percentage pricing punishes success. We charge a flat $895 per declaration, period.",
         },
       },
       {
@@ -62,7 +62,7 @@ function JsonLd() {
         name: "When will CBP issue refunds?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "The CAPE portal opens late April 2026. CBP estimates up to 45 days from filing to refund. If you choose advance funding, you get paid in days regardless.",
+          text: "The CAPE portal opens late April 2026. CBP estimates up to 45 days from filing to refund. If you choose Cash Now, you get paid in days regardless.",
         },
       },
       {
@@ -70,7 +70,7 @@ function JsonLd() {
         name: "Is Recoup a law firm or broker?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "No. We're an administrative preparation service. We work with licensed customs brokers for all CBP filings. We don't provide legal advice.",
+          text: "No. Recoup is an administrative preparation service. All CBP filings are executed through licensed customs brokers. We do not provide legal advice.",
         },
       },
     ],

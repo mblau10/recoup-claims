@@ -34,26 +34,50 @@ export default function Calculator() {
 
   const raw = parseInt(val.replace(/\D/g, "")) || 0;
   const refund = raw * (rate / 100) * (months / 12) * 1.05;
-  const advance = refund * 0.75;
+  const advance = refund * 0.85;
 
   const inputBase =
     "w-full py-4 text-lg bg-transparent border-0 border-b-[1.5px] border-recoup-border text-recoup-black outline-none focus:border-recoup-black transition-colors";
 
   return (
-    <section id="calc" className="py-28 sm:py-40">
-      <div className="max-w-[720px] mx-auto px-6 sm:px-10">
+    <section
+      id="calc"
+      className="py-28 sm:py-40"
+      style={{ background: "var(--color-recoup-paper)" }}
+    >
+      <div className="max-w-[820px] mx-auto px-6 sm:px-10">
         <FadeIn>
-          <p
-            className="text-[13px] font-semibold tracking-[1.5px] uppercase mb-4 text-center"
-            style={{ color: "var(--color-recoup-eyebrow)" }}
-          >
-            Calculator
-          </p>
+          <div className="flex items-center gap-3 mb-8">
+            <span
+              className="h-px w-10"
+              style={{ background: "var(--color-recoup-ink)" }}
+            />
+            <span
+              className="text-[11px] tracking-[0.18em] uppercase"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-recoup-ink)",
+              }}
+            >
+              FILE NO. 05 · REFUND ESTIMATOR
+            </span>
+          </div>
           <h2
-            className="text-[36px] sm:text-[48px] lg:text-[56px] font-normal text-center mb-14 sm:mb-16 leading-[1.12]"
-            style={{ fontFamily: "var(--font-serif)", letterSpacing: -1.5 }}
+            className="text-[44px] sm:text-[64px] lg:text-[80px] font-normal mb-14 leading-[0.95] tracking-[-0.03em]"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-recoup-ink)",
+            }}
           >
-            See what you're owed.
+            See what{" "}
+            <em
+              style={{
+                fontStyle: "italic",
+                color: "var(--color-recoup-ember)",
+              }}
+            >
+              you&rsquo;re owed.
+            </em>
           </h2>
         </FadeIn>
 
@@ -166,7 +190,7 @@ export default function Calculator() {
                 {showAdv && (
                   <div className="mt-8 pt-8 border-t border-recoup-border">
                     <p className="text-[14px] text-recoup-gray mb-2">
-                      Advance amount (75%)
+                      Advance amount (85%)
                     </p>
                     <div
                       className="text-[48px] sm:text-[56px] font-normal text-recoup-black"

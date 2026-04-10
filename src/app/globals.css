@@ -1,16 +1,34 @@
 @import "tailwindcss";
 
 @theme {
-  --color-recoup-black: #1D1D1F;
-  --color-recoup-light: #F5F5F7;
-  --color-recoup-border: #D2D2D7;
-  --color-recoup-gray: #86868B;
-  --color-recoup-gray2: #A1A1A6;
-  --color-recoup-green: #1B873F;
-  --color-recoup-green-bg: #ECFDF3;
-  --color-recoup-eyebrow: #7A6A5A;
-  --font-serif: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  /* Ink + ember palette — distinctive, un-corporate */
+  --color-recoup-ink: #0A0A0B;
+  --color-recoup-ink2: #15151A;
+  --color-recoup-paper: #F6F2EA;
+  --color-recoup-paper2: #EFEAE0;
+  --color-recoup-line: #1F1F24;
+  --color-recoup-line-soft: #E4DED1;
+  --color-recoup-muted: #6B6B73;
+  --color-recoup-muted2: #9A9AA3;
+  --color-recoup-ember: #FF5B2E;
+  --color-recoup-ember-soft: #FFE4D9;
+  --color-recoup-sage: #4B5D4A;
+  --color-recoup-gold: #B8924A;
+
+  --font-display: 'Instrument Serif', 'Times New Roman', serif;
+  --font-serif: 'Instrument Serif', 'Times New Roman', serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* Backwards-compatible aliases so existing components get the new look */
+  --color-recoup-black: #0A0A0B;
+  --color-recoup-light: #EFEAE0;
+  --color-recoup-border: #E4DED1;
+  --color-recoup-gray: #6B6B73;
+  --color-recoup-gray2: #9A9AA3;
+  --color-recoup-green: #FF5B2E;
+  --color-recoup-green-bg: #FFE4D9;
+  --color-recoup-eyebrow: #6B6B73;
 }
 
 html {
@@ -21,15 +39,31 @@ html {
 
 body {
   font-family: var(--font-sans);
-  color: var(--color-recoup-black);
-  background: #fff;
+  color: var(--color-recoup-ink);
+  background: var(--color-recoup-paper);
+  font-feature-settings: "ss01", "cv11";
 }
+
+/* Subtle paper grain on body */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(rgba(10, 10, 11, 0.022) 1px, transparent 1px);
+  background-size: 4px 4px;
+  mix-blend-mode: multiply;
+}
+
+main, nav, section, footer { position: relative; z-index: 1; }
 
 select {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%2386868B'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg width='10' height='6' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%230A0A0B'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0 center;
   padding-right: 20px;
@@ -38,4 +72,42 @@ select {
 .faq-answer {
   overflow: hidden;
   transition: max-height 0.4s ease, opacity 0.3s ease;
+}
+
+/* Signature ticker */
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ticker-track {
+  animation: ticker 42s linear infinite;
+  will-change: transform;
+}
+
+/* Signature underline for display headings */
+.ink-underline {
+  background-image: linear-gradient(var(--color-recoup-ember), var(--color-recoup-ember));
+  background-size: 100% 6px;
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  padding: 0 2px;
+}
+
+/* Mono eyebrow */
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--color-recoup-muted);
+}
+
+/* Grid lines pattern — signature background element */
+.grid-lines {
+  background-image:
+    linear-gradient(rgba(10, 10, 11, 0.06) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(10, 10, 11, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  background-position: -1px -1px;
 }

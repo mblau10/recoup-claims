@@ -18,9 +18,10 @@ type ButtonAsLink = ButtonBaseProps &
 type ButtonProps = ButtonAsButton | ButtonAsLink;
 
 const variantClasses: Record<Variant, string> = {
-  dark: "bg-recoup-black text-white hover:bg-[#2D2D2F]",
-  ghost: "border border-recoup-border text-recoup-black hover:bg-recoup-light",
-  white: "bg-white text-recoup-black hover:bg-recoup-light",
+  dark: "bg-recoup-black text-[#F6F2EA] hover:bg-[#15151A]",
+  ghost:
+    "border border-[color:var(--color-recoup-ink)] text-recoup-black hover:bg-[color:var(--color-recoup-ink)] hover:text-[#F6F2EA]",
+  white: "bg-[#F6F2EA] text-recoup-black hover:bg-white",
 };
 
 export default function Button({
@@ -29,7 +30,7 @@ export default function Button({
   children,
   ...props
 }: ButtonProps) {
-  const base = `inline-flex items-center justify-center rounded-lg px-7 py-3 font-semibold text-[15px] transition-all duration-200 cursor-pointer ${variantClasses[variant]} ${className}`;
+  const base = `inline-flex items-center justify-center rounded-none px-7 py-3 font-medium text-[14px] transition-all duration-200 cursor-pointer tracking-[0.01em] ${variantClasses[variant]} ${className}`;
 
   if ("href" in props && props.href) {
     return (

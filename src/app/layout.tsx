@@ -2,9 +2,9 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Recoup — IEEPA Tariff Refund Recovery",
+  title: "Recoup — Get your IEEPA tariff money back",
   description:
-    "File your IEEPA tariff refund declaration or receive a non-recourse cash advance. Flat fee. No percentage. Licensed customs brokers.",
+    "We file your CAPE declaration. You get paid when CBP pays — or take a cash advance today. No upfront fee. No percentage. Zero-tier pricing.",
   keywords: [
     "IEEPA tariff refund",
     "CAPE portal",
@@ -13,9 +13,9 @@ export const metadata: Metadata = {
     "importer refund 2026",
   ],
   openGraph: {
-    title: "Get Your IEEPA Tariff Refund",
+    title: "Recoup — Your tariff money, back in your bank",
     description:
-      "Federal court ruled IEEPA tariffs unlawful. File your refund claim or get an advance.",
+      "File through CAPE with zero upfront fee, or take a non-recourse cash advance today.",
     url: "https://recoup.claims",
     type: "website",
   },
@@ -29,8 +29,10 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
           rel="stylesheet"
         />
       </head>
