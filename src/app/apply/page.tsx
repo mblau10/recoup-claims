@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, Suspense } from "react";
+import { useState, Suspense, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -15,7 +15,9 @@ import {
   type PlanStepSchema,
 } from "@/lib/schemas";
 
-const stepLabels = ["Contact", "Imports", "Plan", "Review"];
+type Track = "filing" | "advance" | "both";
+
+const stepLabels = ["Contact", "Imports", "Service", "Review"];
 
 const countries = [
   "China",
@@ -33,40 +35,49 @@ const hearAbout = [
   "LinkedIn",
   "Referral",
   "Trade publication",
+  "Customs broker",
   "Other",
 ];
 
-const tierData = [
-  {
-    id: "essentials",
-    name: "Essentials",
-    price: "$297",
-    desc: "ACE setup, ACH enrollment, eligibility check, video walkthrough.",
+const trackInfo: Record<
+  Track,
+  { title: string; sub: string; fee: string; note: string }
+> = {
+  filing: {
+    title: "Pay When CBP Pays",
+    sub: "We file your CAPE declaration through a licensed customs broker. Invoiced only after CBP accepts the filing.",
+    fee: "$895 / 1.5%",
+    note: "$895 floor or 1.5% of refund, whichever is greater. Invoiced only on CBP acceptance — nothing upfront, no retainer.",
   },
-  {
-    id: "full_filing",
-    name: "Full Filing",
-    price: "$1,497",
-    desc: "Everything in Essentials + entry data pull, IEEPA separation, interest calc, declaration prep.",
-    popular: true,
+  advance: {
+    title: "Cash Now Advance",
+    sub: "We wire up to 85% of your projected refund within 72 hours and collect directly from Treasury when CBP pays.",
+    fee: "6–10%",
+    note: "Tiered by refund size: 10% up to $50k, 8% for $50k–$250k, 6% above $250k. Netted at wire. Non-recourse, no personal guarantee.",
   },
-  {
-    id: "priority",
-    name: "Priority",
-    price: "$2,497",
-    desc: "Everything in Full Filing + day-one CAPE submission, liquidation monitoring, dedicated manager.",
+  both: {
+    title: "File + Advance",
+    sub: "We file your CAPE declaration AND wire your advance. You get both: money in 72 hours plus full filing handled end-to-end.",
+    fee: "$895 + 6–10%",
+    note: "Filing fee on acceptance, Cash Now fee netted at wire. Tiered advance rate applies based on refund size.",
   },
-];
+};
+
+function isTrack(v: string | null): v is Track {
+  return v === "filing" || v === "advance" || v === "both";
+}
 
 function IntakeFormInner() {
   const searchParams = useSearchParams();
-  const estimate = searchParams.get("estimate");
+  const estimate = searchParams.get("estimate") || "";
+  const trackParam = searchParams.get("track");
+  const initialTrack: Track = isTrack(trackParam) ? trackParam : "filing";
 
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Store all form data across steps
   const [allData, setAllData] = useState({
     fullName: "",
     companyName: "",
@@ -74,15 +85,14 @@ function IntakeFormInner() {
     phone: "",
     hearAbout: "",
     iorNumber: "",
-    annualImportValue: estimate || "",
+    annualImportValue: estimate,
     primaryCountries: [] as string[],
     monthsUnderIEEPA: "",
-    hasEntryNumbers: "",
-    tier: "full_filing",
-    wantsAdvance: false,
+    hasEntryNumbers: "" as "" | "yes" | "no",
+    track: initialTrack,
+    acceptsEngagement: false,
   });
 
-  // Step 1: Contact
   const contactForm = useForm<ContactStepSchema>({
     resolver: zodResolver(contactStepSchema),
     defaultValues: {
@@ -94,7 +104,6 @@ function IntakeFormInner() {
     },
   });
 
-  // Step 2: Import
   const importForm = useForm<ImportStepSchema>({
     resolver: zodResolver(importStepSchema),
     defaultValues: {
@@ -106,21 +115,28 @@ function IntakeFormInner() {
     },
   });
 
-  // Step 3: Plan
   const planForm = useForm<PlanStepSchema>({
     resolver: zodResolver(planStepSchema),
     defaultValues: {
-      tier: (allData.tier || "full_filing") as "essentials" | "full_filing" | "priority",
-      wantsAdvance: allData.wantsAdvance,
+      track: initialTrack,
+      acceptsEngagement: false,
     },
   });
 
   const inputClass =
-    "w-full py-3.5 px-4 text-base bg-white border border-recoup-border rounded-lg text-recoup-black outline-none focus:border-recoup-black transition-colors";
-  const labelClass = "block text-[13px] font-semibold text-recoup-gray tracking-wide mb-2";
-  const errorClass = "text-[13px] text-[#D32F2F] mt-1.5";
+    "w-full py-3.5 px-4 text-[15px] bg-[color:var(--color-recoup-paper2)] border border-[color:var(--color-recoup-ink)] text-[color:var(--color-recoup-ink)] outline-none focus:bg-white transition-colors";
+  const labelClass =
+    "block text-[11px] font-medium tracking-[0.14em] uppercase mb-2";
+  const labelStyle = {
+    fontFamily: "var(--font-mono)",
+    color: "var(--color-recoup-muted)",
+  };
+  const errorClass =
+    "text-[12px] mt-2";
+  const errorStyle = { color: "#B3291B", fontFamily: "var(--font-mono)" };
 
   const handleContinue = async () => {
+    setSubmitError(null);
     if (step === 0) {
       const valid = await contactForm.trigger();
       if (valid) {
@@ -147,133 +163,250 @@ function IntakeFormInner() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    setSubmitError(null);
     try {
       const res = await fetch("/api/intake", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          track: allData.track,
           email: allData.email,
+          fullName: allData.fullName,
+          phone: allData.phone,
           legalEntityName: allData.companyName,
-          tier: allData.tier,
-          wantsAdvance: allData.wantsAdvance,
+          iorNumber: allData.iorNumber,
+          annualImportValue: allData.annualImportValue,
+          primaryCountries: allData.primaryCountries,
+          monthsUnderIEEPA: allData.monthsUnderIEEPA,
+          hasEntryNumbers: allData.hasEntryNumbers,
+          estimatedRefund: estimate || null,
         }),
       });
       if (res.ok) {
         setDone(true);
+      } else {
+        const body = await res.json().catch(() => ({}));
+        setSubmitError(
+          body?.error ||
+            "We couldn't submit your intake right now. Please try again in a minute, or email support@recoup.claims."
+        );
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      setSubmitError(
+        "Network error. Please check your connection and try again."
+      );
     }
     setSubmitting(false);
   };
 
+  const selectedTrack = planForm.watch("track") || allData.track;
+  const info = useMemo(() => trackInfo[selectedTrack as Track], [selectedTrack]);
+
   if (done) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white px-6">
-        <div className="max-w-md text-center">
-          <div className="w-16 h-16 bg-recoup-green-bg rounded-2xl flex items-center justify-center mx-auto mb-6">
-            <Check size={32} className="text-recoup-green" />
+      <div
+        className="min-h-screen flex items-center justify-center px-6"
+        style={{ background: "var(--color-recoup-paper)" }}
+      >
+        <div className="max-w-[520px] text-center">
+          <div
+            className="w-14 h-14 flex items-center justify-center mx-auto mb-8"
+            style={{
+              background: "var(--color-recoup-ink)",
+              color: "var(--color-recoup-ember)",
+            }}
+          >
+            <Check size={24} strokeWidth={2.5} />
           </div>
           <h1
-            className="text-[32px] font-normal mb-4"
-            style={{ fontFamily: "var(--font-serif)" }}
+            className="text-[44px] sm:text-[56px] font-normal mb-5 leading-[0.95] tracking-[-0.02em]"
+            style={{
+              fontFamily: "var(--font-display)",
+              color: "var(--color-recoup-ink)",
+            }}
           >
-            Application received.
+            Intake received.
           </h1>
-          <p className="text-recoup-gray text-base leading-relaxed mb-8">
-            We'll review your details and reach out within 1–2 business days. Check your email for a confirmation.
+          <p
+            className="text-[16px] leading-[1.65] mb-8"
+            style={{ color: "var(--color-recoup-muted)" }}
+          >
+            A filing specialist will reach out within one U.S. business day at{" "}
+            <span
+              style={{
+                color: "var(--color-recoup-ink)",
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              {allData.email}
+            </span>
+            . We'll confirm your ACE enrollment status, walk you through
+            the engagement letter, and queue your declaration for the CAPE
+            portal.
           </p>
-          <Button href="/" variant="dark">
-            Back to home
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button href="/" variant="dark">
+              Back to home
+            </Button>
+            <Button href="/kit" variant="ghost">
+              Read the Self-Serve Kit →
+            </Button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className="min-h-screen"
+      style={{
+        background: "var(--color-recoup-paper)",
+        color: "var(--color-recoup-ink)",
+      }}
+    >
       {/* Header */}
-      <div className="border-b border-recoup-border">
-        <div className="max-w-[720px] mx-auto px-6 py-5 flex items-center justify-between">
+      <div
+        className="border-b"
+        style={{ borderColor: "rgba(10,10,11,0.12)" }}
+      >
+        <div className="max-w-[820px] mx-auto px-6 py-5 flex items-center justify-between">
           <a
             href="/"
-            className="text-[20px] font-medium text-recoup-black no-underline"
-            style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+            className="no-underline flex items-baseline gap-2"
+            style={{ color: "var(--color-recoup-ink)" }}
           >
-            recoup
+            <span
+              className="text-[22px] leading-none"
+              style={{
+                fontFamily: "var(--font-display)",
+                letterSpacing: -0.5,
+              }}
+            >
+              recoup
+            </span>
+            <span
+              className="text-[10px] uppercase tracking-[0.14em]"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-recoup-ember)",
+              }}
+            >
+              .claims
+            </span>
           </a>
-          <span className="text-[13px] text-recoup-gray">
-            Step {step + 1} of {stepLabels.length}
+          <span
+            className="text-[11px] tracking-[0.14em] uppercase"
+            style={{
+              fontFamily: "var(--font-mono)",
+              color: "var(--color-recoup-muted)",
+            }}
+          >
+            Step {String(step + 1).padStart(2, "0")} /{" "}
+            {String(stepLabels.length).padStart(2, "0")}
           </span>
         </div>
       </div>
 
       {/* Progress */}
-      <div className="max-w-[720px] mx-auto px-6 pt-8">
-        <div className="flex gap-2 mb-2">
-          {stepLabels.map((_, i) => (
-            <div
-              key={i}
-              className={`h-1 flex-1 rounded-full transition-colors ${
-                i <= step ? "bg-recoup-black" : "bg-recoup-border"
-              }`}
-            />
-          ))}
-        </div>
-        <div className="flex justify-between mb-10">
+      <div className="max-w-[820px] mx-auto px-6 pt-10">
+        <div
+          className="flex gap-2 mb-3 border-b pb-4"
+          style={{ borderColor: "rgba(10,10,11,0.08)" }}
+        >
           {stepLabels.map((l, i) => (
-            <span
-              key={l}
-              className={`text-[12px] font-medium ${
-                i <= step ? "text-recoup-black" : "text-recoup-gray2"
-              }`}
-            >
-              {l}
-            </span>
+            <div key={l} className="flex-1 flex items-center gap-3">
+              <span
+                className="text-[10px] w-5"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color:
+                    i <= step
+                      ? "var(--color-recoup-ember)"
+                      : "var(--color-recoup-muted2)",
+                }}
+              >
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span
+                className="text-[11px] uppercase tracking-[0.14em]"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color:
+                    i <= step
+                      ? "var(--color-recoup-ink)"
+                      : "var(--color-recoup-muted2)",
+                }}
+              >
+                {l}
+              </span>
+              <span
+                className="flex-1 h-px"
+                style={{
+                  background:
+                    i <= step
+                      ? "var(--color-recoup-ink)"
+                      : "rgba(10,10,11,0.12)",
+                }}
+              />
+            </div>
           ))}
         </div>
       </div>
 
       {/* Form content */}
-      <div className="max-w-[720px] mx-auto px-6 pb-20">
+      <div className="max-w-[820px] mx-auto px-6 pb-24 pt-10">
         {/* Step 1: Contact */}
         {step === 0 && (
           <div>
             <h2
-              className="text-[28px] sm:text-[36px] font-normal mb-2"
-              style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+              className="text-[38px] sm:text-[54px] font-normal mb-4 leading-[0.95] tracking-[-0.025em]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              Contact information
+              Who are we working with?
             </h2>
-            <p className="text-recoup-gray text-base mb-10">
-              Tell us who you are so we can prepare your filing.
+            <p
+              className="text-[15px] mb-12 max-w-[540px] leading-[1.6]"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              We'll use this only to prepare your CAPE engagement letter
+              and reach out with your filing timeline. No marketing, ever.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div>
-                <label className={labelClass}>Full name</label>
+                <label className={labelClass} style={labelStyle}>
+                  Full name
+                </label>
                 <input
                   className={inputClass}
                   {...contactForm.register("fullName")}
                   placeholder="Jane Smith"
                 />
                 {contactForm.formState.errors.fullName && (
-                  <p className={errorClass}>{contactForm.formState.errors.fullName.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {contactForm.formState.errors.fullName.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Company name</label>
+                <label className={labelClass} style={labelStyle}>
+                  Legal entity / company
+                </label>
                 <input
                   className={inputClass}
                   {...contactForm.register("companyName")}
                   placeholder="Acme Imports LLC"
                 />
                 {contactForm.formState.errors.companyName && (
-                  <p className={errorClass}>{contactForm.formState.errors.companyName.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {contactForm.formState.errors.companyName.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Email</label>
+                <label className={labelClass} style={labelStyle}>
+                  Work email
+                </label>
                 <input
                   type="email"
                   className={inputClass}
@@ -281,11 +414,15 @@ function IntakeFormInner() {
                   placeholder="jane@acme.com"
                 />
                 {contactForm.formState.errors.email && (
-                  <p className={errorClass}>{contactForm.formState.errors.email.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {contactForm.formState.errors.email.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Phone</label>
+                <label className={labelClass} style={labelStyle}>
+                  Phone
+                </label>
                 <input
                   type="tel"
                   className={inputClass}
@@ -293,25 +430,26 @@ function IntakeFormInner() {
                   placeholder="(555) 123-4567"
                 />
                 {contactForm.formState.errors.phone && (
-                  <p className={errorClass}>{contactForm.formState.errors.phone.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {contactForm.formState.errors.phone.message}
+                  </p>
                 )}
               </div>
               <div className="sm:col-span-2">
-                <label className={labelClass}>How did you hear about us?</label>
+                <label className={labelClass} style={labelStyle}>
+                  How did you hear about us?
+                </label>
                 <select
                   className={`${inputClass} cursor-pointer`}
                   {...contactForm.register("hearAbout")}
                 >
-                  <option value="">Select one</option>
+                  <option value="">Select one (optional)</option>
                   {hearAbout.map((h) => (
                     <option key={h} value={h}>
                       {h}
                     </option>
                   ))}
                 </select>
-                {contactForm.formState.errors.hearAbout && (
-                  <p className={errorClass}>{contactForm.formState.errors.hearAbout.message}</p>
-                )}
               </div>
             </div>
           </div>
@@ -321,67 +459,99 @@ function IntakeFormInner() {
         {step === 1 && (
           <div>
             <h2
-              className="text-[28px] sm:text-[36px] font-normal mb-2"
-              style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+              className="text-[38px] sm:text-[54px] font-normal mb-4 leading-[0.95] tracking-[-0.025em]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              Import details
+              About your imports.
             </h2>
-            <p className="text-recoup-gray text-base mb-10">
-              This helps us estimate your refund and prepare the declaration.
+            <p
+              className="text-[15px] mb-12 max-w-[540px] leading-[1.6]"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              Just enough information to size your refund exposure. We'll
+              pull the full entry data from ACE ourselves before filing.
             </p>
-            <div className="space-y-6">
+            <div className="space-y-7">
               <div>
-                <label className={labelClass}>IOR number (Importer of Record)</label>
+                <label className={labelClass} style={labelStyle}>
+                  IOR number (Importer of Record)
+                </label>
                 <input
                   className={inputClass}
                   {...importForm.register("iorNumber")}
                   placeholder="XX-XXXXXXX"
                 />
                 {importForm.formState.errors.iorNumber && (
-                  <p className={errorClass}>{importForm.formState.errors.iorNumber.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {importForm.formState.errors.iorNumber.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Approximate annual import value (USD)</label>
+                <label className={labelClass} style={labelStyle}>
+                  Approximate annual import value (USD)
+                </label>
                 <input
                   className={inputClass}
                   {...importForm.register("annualImportValue")}
                   placeholder="500,000"
                 />
                 {importForm.formState.errors.annualImportValue && (
-                  <p className={errorClass}>{importForm.formState.errors.annualImportValue.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {importForm.formState.errors.annualImportValue.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Primary countries of origin</label>
+                <label className={labelClass} style={labelStyle}>
+                  Primary countries of origin
+                </label>
                 <div className="flex flex-wrap gap-2 mt-1">
-                  {countries.map((c) => (
-                    <button
-                      key={c}
-                      type="button"
-                      onClick={() => {
-                        const current = importForm.getValues("primaryCountries");
-                        const updated = current.includes(c)
-                          ? current.filter((x) => x !== c)
-                          : [...current, c];
-                        importForm.setValue("primaryCountries", updated);
-                      }}
-                      className={`px-4 py-2 rounded-lg text-[14px] font-medium border transition-all cursor-pointer ${
-                        importForm.getValues("primaryCountries").includes(c)
-                          ? "bg-recoup-black text-white border-recoup-black"
-                          : "bg-white text-recoup-gray border-recoup-border hover:border-recoup-gray"
-                      }`}
-                    >
-                      {c}
-                    </button>
-                  ))}
+                  {countries.map((c) => {
+                    const selected = importForm
+                      .watch("primaryCountries")
+                      ?.includes(c);
+                    return (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => {
+                          const current =
+                            importForm.getValues("primaryCountries") || [];
+                          const updated = current.includes(c)
+                            ? current.filter((x) => x !== c)
+                            : [...current, c];
+                          importForm.setValue("primaryCountries", updated, {
+                            shouldValidate: true,
+                          });
+                        }}
+                        className="px-4 py-2 text-[13px] font-medium border transition-all cursor-pointer"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          background: selected
+                            ? "var(--color-recoup-ink)"
+                            : "transparent",
+                          color: selected
+                            ? "var(--color-recoup-paper)"
+                            : "var(--color-recoup-ink)",
+                          borderColor: "var(--color-recoup-ink)",
+                        }}
+                      >
+                        {c}
+                      </button>
+                    );
+                  })}
                 </div>
                 {importForm.formState.errors.primaryCountries && (
-                  <p className={errorClass}>{importForm.formState.errors.primaryCountries.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {importForm.formState.errors.primaryCountries.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Estimated months imported under IEEPA</label>
+                <label className={labelClass} style={labelStyle}>
+                  Estimated months imported under IEEPA
+                </label>
                 <select
                   className={`${inputClass} cursor-pointer`}
                   {...importForm.register("monthsUnderIEEPA")}
@@ -393,103 +563,185 @@ function IntakeFormInner() {
                   <option value="10-12">10–12 months</option>
                 </select>
                 {importForm.formState.errors.monthsUnderIEEPA && (
-                  <p className={errorClass}>{importForm.formState.errors.monthsUnderIEEPA.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {importForm.formState.errors.monthsUnderIEEPA.message}
+                  </p>
                 )}
               </div>
               <div>
-                <label className={labelClass}>Do you have your CBP entry numbers?</label>
+                <label className={labelClass} style={labelStyle}>
+                  Do you have your CBP entry numbers on hand?
+                </label>
                 <div className="flex gap-3 mt-1">
-                  {["Yes", "No"].map((v) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => importForm.setValue("hasEntryNumbers", v.toLowerCase() as "yes" | "no")}
-                      className={`px-6 py-2.5 rounded-lg text-[14px] font-medium border transition-all cursor-pointer ${
-                        importForm.getValues("hasEntryNumbers") === v.toLowerCase()
-                          ? "bg-recoup-black text-white border-recoup-black"
-                          : "bg-white text-recoup-gray border-recoup-border hover:border-recoup-gray"
-                      }`}
-                    >
-                      {v}
-                    </button>
-                  ))}
+                  {[
+                    ["yes", "Yes"],
+                    ["no", "Not yet"],
+                  ].map(([v, label]) => {
+                    const selected =
+                      importForm.watch("hasEntryNumbers") === v;
+                    return (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() =>
+                          importForm.setValue(
+                            "hasEntryNumbers",
+                            v as "yes" | "no",
+                            { shouldValidate: true }
+                          )
+                        }
+                        className="px-6 py-2.5 text-[13px] font-medium border transition-all cursor-pointer"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          background: selected
+                            ? "var(--color-recoup-ink)"
+                            : "transparent",
+                          color: selected
+                            ? "var(--color-recoup-paper)"
+                            : "var(--color-recoup-ink)",
+                          borderColor: "var(--color-recoup-ink)",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
                 </div>
                 {importForm.formState.errors.hasEntryNumbers && (
-                  <p className={errorClass}>{importForm.formState.errors.hasEntryNumbers.message}</p>
+                  <p className={errorClass} style={errorStyle}>
+                    {importForm.formState.errors.hasEntryNumbers.message}
+                  </p>
                 )}
               </div>
             </div>
           </div>
         )}
 
-        {/* Step 3: Choose plan */}
+        {/* Step 3: Service track */}
         {step === 2 && (
           <div>
             <h2
-              className="text-[28px] sm:text-[36px] font-normal mb-2"
-              style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+              className="text-[38px] sm:text-[54px] font-normal mb-4 leading-[0.95] tracking-[-0.025em]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              Choose your plan
+              Pick your service.
             </h2>
-            <p className="text-recoup-gray text-base mb-10">
-              All plans include a flat fee — we never take a percentage.
+            <p
+              className="text-[15px] mb-12 max-w-[540px] leading-[1.6]"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              No tiers, no retainers. Pick the track that fits your situation —
+              you can switch or add the advance later at no cost.
             </p>
-            <div className="space-y-4">
-              {tierData.map((t) => (
-                <button
-                  key={t.id}
-                  type="button"
-                  onClick={() => planForm.setValue("tier", t.id as "essentials" | "full_filing" | "priority")}
-                  className={`w-full text-left p-6 rounded-xl border-2 transition-all cursor-pointer ${
-                    planForm.getValues("tier") === t.id
-                      ? "border-recoup-black bg-recoup-light"
-                      : "border-recoup-border bg-white hover:border-recoup-gray"
-                  }`}
-                >
-                  <div className="flex items-start justify-between mb-2">
-                    <div>
-                      <span className="text-[16px] font-semibold text-recoup-black">
-                        {t.name}
-                      </span>
-                      {t.popular && (
-                        <span className="ml-3 text-[10px] font-bold tracking-[1px] uppercase bg-recoup-black text-white px-2.5 py-1 rounded-md">
-                          Most popular
-                        </span>
-                      )}
+            <div className="space-y-3">
+              {(["filing", "advance", "both"] as Track[]).map((tr) => {
+                const selected = planForm.watch("track") === tr;
+                const t = trackInfo[tr];
+                return (
+                  <button
+                    key={tr}
+                    type="button"
+                    onClick={() =>
+                      planForm.setValue("track", tr, { shouldValidate: true })
+                    }
+                    className="w-full text-left p-7 border transition-all cursor-pointer"
+                    style={{
+                      borderColor: selected
+                        ? "var(--color-recoup-ink)"
+                        : "rgba(10,10,11,0.18)",
+                      background: selected
+                        ? "var(--color-recoup-paper2)"
+                        : "transparent",
+                    }}
+                  >
+                    <div className="flex justify-between items-start gap-4 mb-3">
+                      <div>
+                        <div
+                          className="text-[10px] tracking-[0.18em] uppercase mb-1"
+                          style={{
+                            fontFamily: "var(--font-mono)",
+                            color: selected
+                              ? "var(--color-recoup-ember)"
+                              : "var(--color-recoup-muted)",
+                          }}
+                        >
+                          Track {tr === "filing" ? "B" : tr === "advance" ? "C" : "B + C"}
+                        </div>
+                        <div
+                          className="text-[22px] leading-tight"
+                          style={{
+                            fontFamily: "var(--font-display)",
+                            color: "var(--color-recoup-ink)",
+                          }}
+                        >
+                          {t.title}
+                        </div>
+                      </div>
+                      <div
+                        className="text-[32px] sm:text-[40px] leading-none whitespace-nowrap"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          color: selected
+                            ? "var(--color-recoup-ember)"
+                            : "var(--color-recoup-ink)",
+                        }}
+                      >
+                        {t.fee}
+                      </div>
                     </div>
-                    <span
-                      className="text-[24px] font-normal text-recoup-black"
-                      style={{ fontFamily: "var(--font-serif)" }}
+                    <p
+                      className="text-[14px] leading-[1.6] m-0 max-w-[540px]"
+                      style={{ color: "var(--color-recoup-muted)" }}
                     >
-                      {t.price}
-                    </span>
-                  </div>
-                  <p className="text-[14px] text-recoup-gray leading-relaxed m-0">
-                    {t.desc}
-                  </p>
-                </button>
-              ))}
+                      {t.sub}
+                    </p>
+                    <p
+                      className="text-[11px] leading-[1.5] mt-3 m-0"
+                      style={{
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--color-recoup-muted2)",
+                      }}
+                    >
+                      ↳ {t.note}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
-            {planForm.formState.errors.tier && (
-              <p className={`${errorClass} mt-6`}>{planForm.formState.errors.tier.message}</p>
-            )}
 
-            <div className="mt-8 p-5 bg-recoup-light rounded-xl">
-              <label className="flex items-center gap-3 cursor-pointer">
+            <div
+              className="mt-8 p-6 border"
+              style={{ borderColor: "var(--color-recoup-ink)" }}
+            >
+              <label className="flex items-start gap-3 cursor-pointer">
                 <input
                   type="checkbox"
-                  {...planForm.register("wantsAdvance")}
-                  className="w-5 h-5 rounded border-recoup-border accent-recoup-black"
+                  {...planForm.register("acceptsEngagement")}
+                  className="w-4 h-4 mt-1 accent-[color:var(--color-recoup-ember)] flex-shrink-0"
                 />
-                <div>
-                  <span className="text-[15px] font-medium text-recoup-black">
-                    I also want to explore advance funding
-                  </span>
-                  <p className="text-[13px] text-recoup-gray mt-0.5">
-                    Receive up to 75% of your refund in days. Non-recourse.
-                  </p>
-                </div>
+                <span
+                  className="text-[13px] leading-[1.6]"
+                  style={{ color: "var(--color-recoup-ink)" }}
+                >
+                  I understand Recoup is not a law firm and that all CBP
+                  filings are executed by a licensed customs broker. I agree to
+                  our{" "}
+                  <a
+                    href="/legal"
+                    className="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    terms of service and privacy policy
+                  </a>
+                  . No charge will be made today.
+                </span>
               </label>
+              {planForm.formState.errors.acceptsEngagement && (
+                <p className={`${errorClass} ml-7`} style={errorStyle}>
+                  {planForm.formState.errors.acceptsEngagement.message}
+                </p>
+              )}
             </div>
           </div>
         )}
@@ -498,91 +750,145 @@ function IntakeFormInner() {
         {step === 3 && (
           <div>
             <h2
-              className="text-[28px] sm:text-[36px] font-normal mb-2"
-              style={{ fontFamily: "var(--font-serif)", letterSpacing: -0.5 }}
+              className="text-[38px] sm:text-[54px] font-normal mb-4 leading-[0.95] tracking-[-0.025em]"
+              style={{ fontFamily: "var(--font-display)" }}
             >
-              Review & submit
+              Review &amp; submit.
             </h2>
-            <p className="text-recoup-gray text-base mb-10">
-              Confirm your details. Payment will be collected on the next screen.
+            <p
+              className="text-[15px] mb-12 max-w-[540px] leading-[1.6]"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              Confirm everything below. Nothing is charged on submit — a
+              specialist will email you within one business day to complete the
+              engagement letter.
             </p>
 
             <div className="space-y-6">
-              <div className="p-6 bg-recoup-light rounded-xl">
-                <h3 className="text-[13px] font-semibold text-recoup-gray tracking-wide uppercase mb-4">
-                  Contact
-                </h3>
-                <div className="grid grid-cols-2 gap-y-3 text-[14px]">
-                  <span className="text-recoup-gray">Name</span>
-                  <span className="text-recoup-black font-medium">{allData.fullName || "—"}</span>
-                  <span className="text-recoup-gray">Company</span>
-                  <span className="text-recoup-black font-medium">{allData.companyName || "—"}</span>
-                  <span className="text-recoup-gray">Email</span>
-                  <span className="text-recoup-black font-medium">{allData.email || "—"}</span>
-                  <span className="text-recoup-gray">Phone</span>
-                  <span className="text-recoup-black font-medium">{allData.phone || "—"}</span>
-                </div>
-              </div>
+              <ReviewSection title="Contact">
+                <Row label="Name" value={allData.fullName || "—"} />
+                <Row label="Company" value={allData.companyName || "—"} />
+                <Row label="Email" value={allData.email || "—"} />
+                <Row label="Phone" value={allData.phone || "—"} />
+              </ReviewSection>
 
-              <div className="p-6 bg-recoup-light rounded-xl">
-                <h3 className="text-[13px] font-semibold text-recoup-gray tracking-wide uppercase mb-4">
-                  Import Details
-                </h3>
-                <div className="grid grid-cols-2 gap-y-3 text-[14px]">
-                  <span className="text-recoup-gray">IOR</span>
-                  <span className="text-recoup-black font-medium">{allData.iorNumber || "—"}</span>
-                  <span className="text-recoup-gray">Import value</span>
-                  <span className="text-recoup-black font-medium">{allData.annualImportValue ? `$${allData.annualImportValue}` : "—"}</span>
-                  <span className="text-recoup-gray">Countries</span>
-                  <span className="text-recoup-black font-medium">{allData.primaryCountries.join(", ") || "—"}</span>
-                  <span className="text-recoup-gray">Months</span>
-                  <span className="text-recoup-black font-medium">{allData.monthsUnderIEEPA || "—"}</span>
-                </div>
-              </div>
+              <ReviewSection title="Imports">
+                <Row label="IOR" value={allData.iorNumber || "—"} />
+                <Row
+                  label="Annual value"
+                  value={
+                    allData.annualImportValue
+                      ? "$" + allData.annualImportValue
+                      : "—"
+                  }
+                />
+                <Row
+                  label="Countries"
+                  value={allData.primaryCountries.join(", ") || "—"}
+                />
+                <Row label="Months under IEEPA" value={allData.monthsUnderIEEPA || "—"} />
+                <Row
+                  label="Has entry numbers"
+                  value={
+                    allData.hasEntryNumbers === "yes"
+                      ? "Yes"
+                      : allData.hasEntryNumbers === "no"
+                      ? "Not yet"
+                      : "—"
+                  }
+                />
+              </ReviewSection>
 
-              <div className="p-6 bg-recoup-light rounded-xl">
-                <h3 className="text-[13px] font-semibold text-recoup-gray tracking-wide uppercase mb-4">
-                  Selected Plan
-                </h3>
-                <div className="flex justify-between items-center">
-                  <span className="text-[16px] font-semibold text-recoup-black">
-                    {tierData.find((t) => t.id === allData.tier)?.name}
+              <ReviewSection title="Service">
+                <div className="flex justify-between items-baseline py-3">
+                  <span
+                    className="text-[14px]"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--color-recoup-ink)",
+                    }}
+                  >
+                    {info.title}
                   </span>
                   <span
-                    className="text-[28px] font-normal"
-                    style={{ fontFamily: "var(--font-serif)" }}
+                    className="text-[28px]"
+                    style={{
+                      fontFamily: "var(--font-display)",
+                      color: "var(--color-recoup-ember)",
+                    }}
                   >
-                    {tierData.find((t) => t.id === allData.tier)?.price}
+                    {info.fee}
                   </span>
                 </div>
-                {allData.wantsAdvance && (
-                  <p className="text-[13px] text-recoup-gray mt-2">
-                    + Advance funding exploration requested
-                  </p>
-                )}
-              </div>
+                <p
+                  className="text-[12px] leading-[1.5] m-0"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-recoup-muted)",
+                  }}
+                >
+                  {info.note}
+                </p>
+              </ReviewSection>
             </div>
+
+            {submitError && (
+              <div
+                className="mt-8 p-4 border"
+                style={{
+                  borderColor: "#B3291B",
+                  background: "rgba(179,41,27,0.06)",
+                }}
+              >
+                <p
+                  className="text-[13px] m-0"
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    color: "#B3291B",
+                  }}
+                >
+                  {submitError}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center mt-12 pt-8 border-t border-recoup-border">
+        {/* Nav */}
+        <div
+          className="flex justify-between items-center mt-14 pt-8 border-t"
+          style={{ borderColor: "rgba(10,10,11,0.12)" }}
+        >
           {step > 0 ? (
             <button
               onClick={() => setStep(step - 1)}
-              className="flex items-center gap-2 text-[15px] font-medium text-recoup-gray hover:text-recoup-black transition-colors cursor-pointer bg-transparent border-0 p-0"
+              className="flex items-center gap-2 text-[13px] font-medium transition-colors cursor-pointer bg-transparent border-0 p-0"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-recoup-muted)",
+              }}
             >
-              <ArrowLeft size={16} />
+              <ArrowLeft size={14} />
               Back
             </button>
           ) : (
-            <div />
+            <a
+              href="/"
+              className="flex items-center gap-2 text-[13px] font-medium transition-colors no-underline"
+              style={{
+                fontFamily: "var(--font-mono)",
+                color: "var(--color-recoup-muted)",
+              }}
+            >
+              <ArrowLeft size={14} />
+              Back to home
+            </a>
           )}
 
           {step < 3 ? (
             <Button onClick={handleContinue} variant="dark">
               Continue
-              <ArrowRight size={16} className="ml-2" />
+              <ArrowRight size={14} className="ml-2" />
             </Button>
           ) : (
             <Button
@@ -591,7 +897,7 @@ function IntakeFormInner() {
               className="!px-10"
               disabled={submitting}
             >
-              {submitting ? "Submitting..." : "Submit application →"}
+              {submitting ? "Submitting…" : "Submit intake →"}
             </Button>
           )}
         </div>
@@ -600,13 +906,74 @@ function IntakeFormInner() {
   );
 }
 
+function ReviewSection({
+  title,
+  children,
+}: {
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="p-6 border"
+      style={{ borderColor: "rgba(10,10,11,0.18)" }}
+    >
+      <h3
+        className="text-[10px] tracking-[0.18em] uppercase mb-4"
+        style={{
+          fontFamily: "var(--font-mono)",
+          color: "var(--color-recoup-muted)",
+        }}
+      >
+        {title}
+      </h3>
+      <div>{children}</div>
+    </div>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      className="grid grid-cols-12 gap-3 py-2 text-[13px]"
+      style={{ fontFamily: "var(--font-mono)" }}
+    >
+      <span
+        className="col-span-5"
+        style={{ color: "var(--color-recoup-muted)" }}
+      >
+        {label}
+      </span>
+      <span
+        className="col-span-7 break-words"
+        style={{ color: "var(--color-recoup-ink)" }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
 export default function ApplyPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-recoup-gray">Loading...</p>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div
+          className="min-h-screen flex items-center justify-center"
+          style={{ background: "var(--color-recoup-paper)" }}
+        >
+          <p
+            className="text-[13px]"
+            style={{
+              color: "var(--color-recoup-muted)",
+              fontFamily: "var(--font-mono)",
+            }}
+          >
+            Loading intake…
+          </p>
+        </div>
+      }
+    >
       <IntakeFormInner />
     </Suspense>
   );

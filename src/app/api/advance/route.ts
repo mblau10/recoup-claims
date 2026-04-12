@@ -21,15 +21,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const { applicationId, bankName, routingNumber, accountNumber } = result.data;
+    const { applicationId, bankName } = result.data;
 
-    // Update application with banking details
+    // Update application with bank name only — actual routing/account numbers
+    // are collected via our banking partner's hosted form, not this endpoint.
     const { error: dbError } = await supabaseAdmin
       .from("applications")
       .update({
         bank_name: bankName,
-        routing_number: routingNumber,
-        account_number: accountNumber,
         wants_advance: true,
       })
       .eq("id", applicationId);

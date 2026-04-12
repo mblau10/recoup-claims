@@ -32,7 +32,7 @@ export default function CTA() {
                 color: "var(--color-recoup-ember)",
               }}
             >
-              FILE NO. 07 · NEXT MOVE
+              Next steps
             </span>
           </div>
           <div className="grid grid-cols-12 gap-6 items-end">
@@ -62,13 +62,22 @@ export default function CTA() {
                 emails about &ldquo;next steps.&rdquo; Just a number and a next
                 move.
               </p>
-              <Button
-                href="#calc"
-                variant="white"
-                className="!px-8 !py-4 !text-[14px]"
-              >
-                Estimate my refund →
-              </Button>
+              <div className="flex flex-col gap-3">
+                <Button
+                  href="#calc"
+                  variant="white"
+                  className="!px-8 !py-4 !text-[14px]"
+                >
+                  Estimate my refund →
+                </Button>
+                <Button
+                  href="/apply?track=filing"
+                  variant="ghost"
+                  className="!px-8 !py-4 !text-[14px] !text-[#F6F2EA] !border-[#F6F2EA]"
+                >
+                  Skip ahead — start filing
+                </Button>
+              </div>
             </div>
           </div>
         </FadeIn>

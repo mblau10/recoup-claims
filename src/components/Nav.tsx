@@ -49,10 +49,11 @@ export default function Nav() {
         <div className="flex gap-8 items-center">
           <div className="hidden sm:flex gap-7">
             {[
-              { label: "How it works", href: "#how-it-works" },
-              { label: "Pricing", href: "#pricing" },
-              { label: "Advance", href: "#advance" },
-              { label: "FAQ", href: "#faq" },
+              { label: "How it works", href: "/#how-it-works" },
+              { label: "Pricing", href: "/#pricing" },
+              { label: "Advance", href: "/#advance" },
+              { label: "Kit", href: "/kit" },
+              { label: "FAQ", href: "/#faq" },
             ].map((t) => (
               <a
                 key={t.label}
@@ -68,8 +69,12 @@ export default function Nav() {
               </a>
             ))}
           </div>
-          <Button href="#calc" variant="dark" className="!px-4 !py-2 !text-[12px]">
-            Start →
+          <Button
+            href="/apply?track=filing"
+            variant="dark"
+            className="!px-4 !py-2 !text-[12px]"
+          >
+            Start filing →
           </Button>
         </div>
       </div>

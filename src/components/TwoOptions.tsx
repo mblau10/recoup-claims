@@ -11,8 +11,9 @@ const options = [
     desc:
       "Full CAPE declaration preparation, ACE enrollment, IEEPA duty separation, interest calculation — filed through a licensed customs broker. Your refund arrives direct from Treasury.",
     price: "$0 upfront",
-    note: "Invoiced at $895/declaration after CBP accepts",
+    note: "Invoiced at $895 or 1.5% of refund, whichever is greater — only after CBP accepts",
     btn: "Start filing",
+    href: "/apply?track=filing",
     dark: false,
   },
   {
@@ -22,8 +23,9 @@ const options = [
     desc:
       "Skip the 45-day wait. We wire up to 85% of your projected refund within 72 hours and collect direct from Treasury when CBP pays. Non-recourse — we take the timing risk, not you.",
     price: "Up to 85%",
-    note: "Fee 8.5% of advance. No personal guarantee.",
+    note: "Fee 6–10% of advance, tiered by refund size. No personal guarantee.",
     btn: "Get advanced",
+    href: "/apply?track=advance",
     dark: true,
   },
 ];
@@ -49,7 +51,7 @@ export default function TwoOptions() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              FILE NO. 02 · TWO ROUTES TO YOUR MONEY
+              Two routes to your money
             </span>
           </div>
           <div className="grid grid-cols-12 gap-6 mb-16">
@@ -143,7 +145,7 @@ export default function TwoOptions() {
                     {o.note}
                   </div>
                   <Button
-                    href="#calc"
+                    href={o.href}
                     variant={o.dark ? "white" : "dark"}
                   >
                     {o.btn} →

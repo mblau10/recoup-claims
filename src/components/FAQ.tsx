@@ -13,24 +13,24 @@ const faqs = [
     "We do all the work — eligibility screen, entry data pull, IEEPA separation, CAPE declaration drafting, filing through a licensed customs broker — and only invoice you after CBP stamps your declaration accepted. If CBP rejects and we need to resubmit, the correction is free. You never write us a check before Treasury writes you one.",
   ],
   [
-    "Why $895 per declaration instead of a percentage?",
-    "Because the work to prepare a declaration for a $50K refund is identical to the work for a $5M refund. Percentage pricing punishes success. We charge a flat fee per declaration filed — nothing more, regardless of refund size.",
+    "How does Recoup's filing fee actually work?",
+    "It's $895 or 1.5% of the refund, whichever is greater. In practice that means small refunds (anything up to roughly $60k) pay the flat $895 floor, and larger refunds pay 1.5% of the refund. A $100k refund pays $1,500; a $500k refund pays $7,500. We never charge hourly, never charge a retainer, and never bill until CBP has accepted the declaration.",
   ],
   [
-    "How does Cash Now work?",
-    "If you don&rsquo;t want to wait 45 days for Treasury, we verify your refund amount and wire up to 85% of it within 72 hours. Our fee is 8.5% of the advance, deducted at funding — no interest, no monthly payments, no personal guarantee. It&rsquo;s non-recourse: if CBP ultimately reduces your refund, we absorb the shortfall, not you.",
+    "How does Cash Now work and what does it cost?",
+    "If you don't want to wait 45 days for Treasury, we verify your refund and wire up to 85% of it within 72 hours. The fee is tiered by refund size: 10% of the advance for refunds up to $50k, 8% for $50k–$250k, and 6% above $250k. It's netted at funding — no interest, no monthly payments, no personal guarantee. And it's non-recourse: if CBP ultimately reduces or denies your refund, we absorb the shortfall, not you.",
   ],
   [
     "Do I need a lawyer?",
-    "For a standard CAPE filing, no — CBP built a self-service system. We handle the data preparation and declaration formatting. If your situation needs CIT litigation, we&rsquo;ll tell you directly and refer you at no markup.",
+    "For a standard CAPE filing, no — CBP built a self-service system. We handle the data preparation and declaration formatting. If your situation needs CIT litigation, we'll tell you directly and refer you at no markup.",
   ],
   [
     "When will CBP issue refunds?",
-    "The CAPE portal opens late April 2026. CBP estimates up to 45 days from filing to refund. If you choose Cash Now, you get paid in days regardless of CBP&rsquo;s timeline.",
+    "The CAPE portal opens late April 2026. CBP estimates up to 45 days from filing to refund. If you choose Cash Now, you get paid in days regardless of CBP's timeline.",
   ],
   [
     "Is Recoup a law firm or broker?",
-    "No. We&rsquo;re an administrative preparation service. We work with licensed customs brokers for all CBP filings and do not provide legal advice.",
+    "No. We're an administrative preparation service. We work with licensed customs brokers for all CBP filings and do not provide legal advice.",
   ],
 ];
 
@@ -89,7 +89,7 @@ export default function FAQ() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              FILE NO. 06 · QUESTIONS &amp; ANSWERS
+              Frequently asked questions
             </span>
           </div>
           <h2

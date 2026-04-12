@@ -1,78 +1,115 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabase";
-import { stripe, TIER_AMOUNTS } from "@/lib/stripe";
+import { stripe } from "@/lib/stripe";
 
+/**
+ * POST /api/intake
+ *
+ * Creates an application record and a Stripe SetupIntent so we can hold a
+ * payment method on file. We do NOT charge the customer at intake — the
+ * filing fee ($895 floor or 1.5% of refund, whichever is greater) is only
+ * captured after CBP accepts the CAPE declaration.
+ *
+ * Body shape:
+ *   {
+ *     track: "filing" | "advance" | "both",
+ *     email, fullName, phone, legalEntityName,
+ *     iorNumber, annualImportValue, primaryCountries[],
+ *     monthsUnderIEEPA, hasEntryNumbers
+ *   }
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const {
-      leadId,
-      legalEntityName,
-      ein,
-      businessAddress,
-      htsCodes,
-      entryNumbers,
-      portsOfEntry,
-      importValueByCountry,
-      tier,
-      wantsAdvance,
+      track,
       email,
+      fullName,
+      phone,
+      legalEntityName,
+      iorNumber,
+      annualImportValue,
+      primaryCountries,
+      monthsUnderIEEPA,
+      hasEntryNumbers,
+      estimatedRefund,
     } = body;
 
-    if (!tier || !email) {
+    if (!track || !email || !legalEntityName) {
       return NextResponse.json(
-        { error: "Missing required fields" },
+        { error: "Missing required fields: track, email, legalEntityName" },
         { status: 400 }
       );
     }
 
-    const amount = TIER_AMOUNTS[tier as keyof typeof TIER_AMOUNTS];
-    if (!amount) {
-      return NextResponse.json({ error: "Invalid tier" }, { status: 400 });
-    }
-
-    // Create application record
-    const { data: application, error: dbError } = await supabaseAdmin
-      .from("applications")
-      .insert({
-        lead_id: leadId || null,
-        legal_entity_name: legalEntityName,
-        ein,
-        business_address: businessAddress,
-        hts_codes: htsCodes || [],
-        entry_numbers: entryNumbers || [],
-        ports_of_entry: portsOfEntry || [],
-        import_value_by_country: importValueByCountry || {},
-        tier,
-        wants_advance: wantsAdvance || false,
-        status: "pending",
-      })
-      .select("id")
-      .single();
-
-    if (dbError) {
-      console.error("Supabase error:", dbError);
+    const validTracks = ["filing", "advance", "both"];
+    if (!validTracks.includes(track)) {
       return NextResponse.json(
-        { error: "Failed to create application" },
-        { status: 500 }
+        { error: "Invalid track — must be filing, advance, or both" },
+        { status: 400 }
       );
     }
 
-    // Create Stripe PaymentIntent
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount,
-      currency: "usd",
-      metadata: {
-        applicationId: application.id,
-        tier,
-        email,
-      },
-      receipt_email: email,
-    });
+    // Persist application
+    let applicationId: string | null = null;
+    try {
+      const { data: application, error: dbError } = await supabaseAdmin
+        .from("applications")
+        .insert({
+          full_name: fullName || null,
+          phone: phone || null,
+          email,
+          legal_entity_name: legalEntityName,
+          ior_number: iorNumber || null,
+          annual_import_value: annualImportValue || null,
+          primary_countries: primaryCountries || [],
+          months_under_ieepa: monthsUnderIEEPA || null,
+          has_entry_numbers: hasEntryNumbers || null,
+          estimated_refund: estimatedRefund || null,
+          track,
+          status: "pending_intake",
+        })
+        .select("id")
+        .single();
+
+      if (dbError) {
+        console.warn("Supabase insert failed (soft):", dbError.message);
+      } else {
+        applicationId = application?.id ?? null;
+      }
+    } catch (e) {
+      // Supabase not configured in preview envs — continue without persistence.
+      console.warn("Supabase unavailable:", e);
+    }
+
+    // Create a SetupIntent to capture a payment method on file.
+    // Nothing is charged today — capture happens only after CBP acceptance.
+    let clientSecret: string | null = null;
+    try {
+      const setupIntent = await stripe.setupIntents.create({
+        payment_method_types: ["card"],
+        usage: "off_session",
+        metadata: {
+          applicationId: applicationId || "unlinked",
+          track,
+          email,
+          legalEntityName,
+        },
+      });
+      clientSecret = setupIntent.client_secret;
+    } catch (e) {
+      console.warn("Stripe unavailable:", e);
+    }
 
     return NextResponse.json({
-      clientSecret: paymentIntent.client_secret,
-      applicationId: application.id,
+      ok: true,
+      applicationId,
+      clientSecret,
+      track,
+      nextStep:
+        track === "advance"
+          ? "advance_bank_verification"
+          : "filing_in_queue",
     });
   } catch (error) {
     console.error("Intake API error:", error);

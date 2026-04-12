@@ -50,7 +50,7 @@ export default function HowItWorks() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              FILE NO. 03 · THE PROCESS
+              How it works
             </span>
           </div>
           <div className="grid grid-cols-12 gap-6 mb-20">

@@ -15,9 +15,9 @@ function JsonLd() {
     "@type": "LocalBusiness",
     name: "Recoup",
     description:
-      "Zero-upfront IEEPA tariff refund filing through the CBP CAPE portal. $895 per declaration, invoiced only after CBP accepts. Optional non-recourse cash advance.",
+      "Zero-upfront IEEPA tariff refund filing through the CBP CAPE portal. Flat $895 or 1.5% of refund — whichever is greater — invoiced only after CBP accepts. Optional non-recourse Cash Now advance, tiered 6–10%.",
     url: "https://recoup.claims",
-    priceRange: "$0–$895",
+    priceRange: "$0–1.5%",
     areaServed: "US",
   };
 
@@ -38,7 +38,7 @@ function JsonLd() {
         name: "What does \"pay when CBP pays\" mean?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We prepare your entry data, draft the CAPE declaration, and file it through a licensed customs broker. You pay nothing until CBP accepts the filing. Then we invoice a flat $895 per declaration — regardless of refund size.",
+          text: "We prepare your entry data, draft the CAPE declaration, and file it through a licensed customs broker. You pay nothing until CBP accepts the filing. Our fee is $895 or 1.5% of the refund, whichever is greater — so small refunds pay the $895 floor and larger refunds scale at 1.5%.",
         },
       },
       {
@@ -46,15 +46,15 @@ function JsonLd() {
         name: "How does Cash Now work?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "We verify your refund amount and wire up to 85% of it within 72 hours. Our fee is 8.5% of the advance, deducted at funding. It is non-recourse: if CBP reduces the refund, we absorb the shortfall.",
+          text: "We verify your refund amount and wire up to 85% of it within 72 hours. The fee is tiered by refund size: 10% of the advance for refunds up to $50k, 8% for $50k–$250k, and 6% above $250k. It is non-recourse: if CBP reduces the refund, we absorb the shortfall.",
         },
       },
       {
         "@type": "Question",
-        name: "Why a flat per-declaration fee instead of a percentage?",
+        name: "Why this pricing instead of a retainer or contingency?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Preparing a declaration for a $50K refund takes the same work as a $5M refund. Percentage pricing punishes success. We charge a flat $895 per declaration, period.",
+          text: "A retainer asks you to pay before we deliver anything. A pure contingency punishes success. We set an honest $895 floor that covers small refunds where the work is actually a fixed cost, and 1.5% above that so the fee scales gently with refund size.",
         },
       },
       {

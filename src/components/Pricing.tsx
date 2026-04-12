@@ -5,12 +5,11 @@ import Button from "./ui/Button";
 import { ArrowUpRight } from "lucide-react";
 
 /*
-  Unique pricing model — no tiers, no "most popular", no $297/$1,497/$2,497.
-  Three independent tracks the importer composes à la carte:
+  Recoup pricing model — honest flat floor, scales on big refunds.
 
-  TRACK A — "Self-Serve Kit"       : $0 (free, lead magnet)
-  TRACK B — "Pay When CBP Pays"    : $0 upfront + $895 per CAPE declaration, invoiced after CBP accepts
-  TRACK C — "Cash Now" advance     : 0 upfront, deducted from advance (8.5% of advance amount)
+  TRACK A — "Self-Serve Kit"    : $0 forever
+  TRACK B — "Pay When CBP Pays" : $895 OR 1.5% of refund, whichever is greater
+  TRACK C — "Cash Now" advance  : tiered by refund size (10% / 8% / 6%)
 
   Plus a transparent line-item rate card so nothing is hidden.
 */
@@ -26,6 +25,7 @@ const tracks = [
     price: "$0",
     unit: "/forever",
     cta: "Download the kit",
+    href: "/kit",
     highlight: false,
   },
   {
@@ -34,13 +34,14 @@ const tracks = [
     tag: "zero upfront",
     headline: "We file. Invoice later.",
     body:
-      "We prepare your entry data, draft the CAPE declaration, and file it through a licensed customs broker. You pay nothing until CBP accepts the filing. No retainer. No percentage of your refund. Ever.",
+      "We prepare your entry data, draft the CAPE declaration, and file it through a licensed customs broker. You pay nothing until CBP accepts the filing. No retainer. No success fee on top.",
     price: "$895",
-    unit: "/declaration",
+    unit: "or 1.5% of refund",
     cta: "Start filing",
+    href: "/apply?track=filing",
     highlight: true,
     footnote:
-      "Invoiced only after CBP stamps your declaration accepted. One price per declaration — flat, regardless of refund size.",
+      "Whichever is greater. Flat $895 up to ~$60k refund; 1.5% above that. Invoiced only after CBP accepts the declaration.",
   },
   {
     letter: "C",
@@ -48,13 +49,14 @@ const tracks = [
     tag: "non-recourse",
     headline: "Money in 72 hours",
     body:
-      "Skip the 45-day CBP wait. We wire up to 85% of your projected refund in 72 hours, then collect directly from Treasury. If CBP reduces the refund, we absorb it — not you.",
-    price: "8.5%",
+      "Skip the 45-day CBP wait. We wire up to 85% of your projected refund in 72 hours, then collect directly from Treasury. If CBP reduces or denies the refund, we absorb it — not you.",
+    price: "6–10%",
     unit: "of advance",
     cta: "Get advanced",
+    href: "/apply?track=advance",
     highlight: false,
     footnote:
-      "Fee is deducted from the advance at funding. No personal guarantee. No interest. No monthly payments.",
+      "Tiered by refund size: 10% up to $50k, 8% for $50–250k, 6% above $250k. Netted at wire — no interest, no monthly payments, no personal guarantee.",
   },
 ];
 
@@ -62,10 +64,12 @@ const rateCard = [
   ["Eligibility screen", "$0"],
   ["Entry data pull (ACE)", "$0"],
   ["IEEPA duty separation", "$0"],
-  ["CAPE declaration prep", "$895", "when CBP accepts"],
+  ["CAPE declaration prep", "$895 / 1.5%", "whichever is greater"],
   ["Correction resubmission", "$0", "if CBP rejects ours"],
   ["Liquidation monitoring", "$0", "first 120 days"],
-  ["Cash advance", "8.5%", "of advance amount"],
+  ["Cash advance — under $50k", "10%", "of advance amount"],
+  ["Cash advance — $50k–$250k", "8%", "of advance amount"],
+  ["Cash advance — $250k+", "6%", "of advance amount"],
   ["Multi-entity consolidation", "$200", "per additional EIN"],
   ["Post-payment audit", "$0", "only if refund is short"],
 ];
@@ -91,7 +95,7 @@ export default function Pricing() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              FILE NO. 04 · PRICING
+              Pricing
             </span>
           </div>
           <div className="grid grid-cols-12 gap-6 mb-16">
@@ -102,14 +106,14 @@ export default function Pricing() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              No tiers. No retainers.{" "}
+              No retainers. No hourly. {" "}
               <em
                 style={{
                   fontStyle: "italic",
                   color: "var(--color-recoup-ember)",
                 }}
               >
-                No percentage of your refund.
+                No games.
               </em>
             </h2>
             <p
@@ -117,8 +121,8 @@ export default function Pricing() {
               style={{ color: "var(--color-recoup-muted)" }}
             >
               Three independent tracks. Pick one, pick all three, pick none.
-              The rate card below is the entire rate card — if it&rsquo;s not
-              listed, we don&rsquo;t charge for it.
+              The rate card below is the entire rate card — if it's not
+              listed, we don't charge for it.
             </p>
           </div>
         </FadeIn>
@@ -229,7 +233,7 @@ export default function Pricing() {
                   </div>
                   <div className="sm:flex sm:justify-end mt-6">
                     <Button
-                      href="#calc"
+                      href={t.href}
                       variant={t.highlight ? "dark" : "ghost"}
                       className="!text-[13px]"
                     >
@@ -253,7 +257,7 @@ export default function Pricing() {
                   color: "var(--color-recoup-muted)",
                 }}
               >
-                APPENDIX · RATE CARD
+                Complete rate card
               </div>
               <h3
                 className="text-[30px] sm:text-[40px] leading-[1.05] mb-4"
@@ -271,8 +275,8 @@ export default function Pricing() {
                 className="text-[14px] leading-[1.6] max-w-[320px]"
                 style={{ color: "var(--color-recoup-muted)" }}
               >
-                If it&rsquo;s not in this list, we don&rsquo;t charge for it.
-                If we ever add a line, we&rsquo;ll grandfather every active
+                If it's not in this list, we don't charge for it.
+                If we ever add a line, we'll grandfather every active
                 filing at the old rate.
               </p>
             </div>

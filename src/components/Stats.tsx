@@ -7,7 +7,7 @@ const stats = [
   { value: 166, prefix: "$", suffix: "B", label: "Duties paid under IEEPA" },
   { value: 330, prefix: "", suffix: "K+", label: "Eligible U.S. importers" },
   { value: 72, prefix: "", suffix: "h", label: "Cash advance wire time" },
-  { value: 895, prefix: "$", suffix: "", label: "One-time CAPE filing fee" },
+  { value: 895, prefix: "$", suffix: "", label: "Flat filing floor (or 1.5%)" },
 ];
 
 export default function Stats() {

@@ -36,7 +36,7 @@ export default function Footer() {
               style={{ color: "var(--color-recoup-muted)" }}
             >
               Administrative preparation for IEEPA tariff refund recovery
-              through CBP&rsquo;s CAPE portal. Not a law firm. All CBP filings
+              through CBP's CAPE portal. Not a law firm. All CBP filings
               executed through licensed customs brokers.
             </p>
           </div>
@@ -52,10 +52,13 @@ export default function Footer() {
             </div>
             <ul className="space-y-2 list-none p-0">
               {[
-                ["How it works", "#how-it-works"],
-                ["Pricing", "#pricing"],
-                ["Cash Now advance", "#advance"],
-                ["FAQ", "#faq"],
+                ["How it works", "/#how-it-works"],
+                ["Pricing", "/#pricing"],
+                ["Cash Now advance", "/#advance"],
+                ["FAQ", "/#faq"],
+                ["Self-Serve Kit", "/kit"],
+                ["Start filing", "/apply?track=filing"],
+                ["Legal & Privacy", "/legal"],
               ].map(([l, h]) => (
                 <li key={l}>
                   <a
@@ -88,7 +91,7 @@ export default function Footer() {
             >
               Recoup is an administrative preparation service and does not
               provide legal, tax, or investment advice. Refund eligibility
-              depends on CBP&rsquo;s review of entry-level data. Cash advances
+              depends on CBP's review of entry-level data. Cash advances
               are non-recourse purchase-of-claim transactions, not loans.
             </p>
           </div>
@@ -102,7 +105,23 @@ export default function Footer() {
           }}
         >
           <span>© 2026 RECOUP LLC · RECOUP.CLAIMS</span>
-          <span>FILE NO. 08 · LAST UPDATED APRIL 2026</span>
+          <span>
+            <a
+              href="/legal"
+              className="no-underline"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              Terms &amp; Privacy
+            </a>
+            {" · "}
+            <a
+              href="mailto:support@recoup.claims"
+              className="no-underline"
+              style={{ color: "var(--color-recoup-muted)" }}
+            >
+              support@recoup.claims
+            </a>
+          </span>
         </div>
       </div>
     </footer>

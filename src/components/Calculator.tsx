@@ -36,6 +36,15 @@ export default function Calculator() {
   const refund = raw * (rate / 100) * (months / 12) * 1.05;
   const advance = refund * 0.85;
 
+  // Tiered Cash Now fee: 10% ≤ $50k, 8% $50–250k, 6% > $250k
+  const advanceFeeRate =
+    refund <= 50_000 ? 0.10 : refund <= 250_000 ? 0.08 : 0.06;
+  const advanceFee = advance * advanceFeeRate;
+  const cashToYou = advance - advanceFee;
+
+  // Track B filing fee: max($895, 1.5% of refund)
+  const filingFee = refund > 0 ? Math.max(895, refund * 0.015) : 0;
+
   const inputBase =
     "w-full py-4 text-lg bg-transparent border-0 border-b-[1.5px] border-recoup-border text-recoup-black outline-none focus:border-recoup-black transition-colors";
 
@@ -59,7 +68,7 @@ export default function Calculator() {
                 color: "var(--color-recoup-ink)",
               }}
             >
-              FILE NO. 05 · REFUND ESTIMATOR
+              Refund estimator
             </span>
           </div>
           <h2
@@ -76,7 +85,7 @@ export default function Calculator() {
                 color: "var(--color-recoup-ember)",
               }}
             >
-              you&rsquo;re owed.
+              you're owed.
             </em>
           </h2>
         </FadeIn>
@@ -143,77 +152,213 @@ export default function Calculator() {
             </div>
 
             {/* Result */}
-            <div className="text-center py-12 border-t border-recoup-border">
-              <p className="text-[14px] text-recoup-gray mb-2">
+            <div
+              className="text-center py-12 border-t"
+              style={{ borderColor: "var(--color-recoup-line-soft)" }}
+            >
+              <p
+                className="text-[11px] tracking-[0.18em] uppercase mb-3"
+                style={{
+                  fontFamily: "var(--font-mono)",
+                  color: "var(--color-recoup-muted)",
+                }}
+              >
                 Estimated refund
               </p>
               <div
                 className="text-[56px] sm:text-[72px] font-normal leading-none"
-                style={{ fontFamily: "var(--font-serif)", letterSpacing: -2 }}
+                style={{
+                  fontFamily: "var(--font-display)",
+                  letterSpacing: -2,
+                  color: "var(--color-recoup-ink)",
+                }}
               >
                 {fmt(refund)}
               </div>
-              <p className="text-[13px] text-recoup-gray2 mt-2">
-                Includes estimated interest · Actual depends on entry data
+              <p
+                className="text-[12px] mt-2"
+                style={{ color: "var(--color-recoup-muted2)" }}
+              >
+                Includes statutory interest · Actual depends on entry data
               </p>
             </div>
+
+            {/* Fee breakdown — Track B preview */}
+            {refund > 0 && !showAdv && (
+              <div
+                className="mt-8 py-6 border-t grid grid-cols-2 gap-4 text-[13px]"
+                style={{
+                  borderColor: "var(--color-recoup-line-soft)",
+                  fontFamily: "var(--font-mono)",
+                }}
+              >
+                <div style={{ color: "var(--color-recoup-muted)" }}>
+                  Track B filing fee
+                  <span
+                    className="block text-[10px] mt-1"
+                    style={{ color: "var(--color-recoup-muted2)" }}
+                  >
+                    $895 or 1.5% of refund, whichever is greater
+                  </span>
+                </div>
+                <div
+                  className="text-right"
+                  style={{ color: "var(--color-recoup-ink)" }}
+                >
+                  −{fmt(filingFee)}
+                  <span
+                    className="block text-[10px] mt-1"
+                    style={{ color: "var(--color-recoup-ember)" }}
+                  >
+                    you keep {fmt(refund - filingFee)}
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Advance toggle + CTA */}
             {refund > 0 && (
               <div className="text-center pt-8">
                 <button
                   onClick={() => setShowAdv(!showAdv)}
-                  className={`inline-flex items-center gap-3 cursor-pointer px-6 py-3 rounded-lg transition-all border ${
-                    showAdv
-                      ? "bg-recoup-light border-recoup-black"
-                      : "bg-recoup-light border-transparent"
+                  className={`inline-flex items-center gap-3 cursor-pointer px-6 py-3 transition-all border ${
+                    showAdv ? "" : ""
                   }`}
+                  style={{
+                    borderColor: showAdv
+                      ? "var(--color-recoup-ink)"
+                      : "var(--color-recoup-line-soft)",
+                    background: showAdv
+                      ? "var(--color-recoup-paper2)"
+                      : "transparent",
+                  }}
                 >
                   <div
-                    className={`w-[18px] h-[18px] rounded-[4px] border-2 flex items-center justify-center transition-all ${
-                      showAdv
-                        ? "bg-recoup-black border-recoup-black"
-                        : "bg-transparent border-recoup-gray2"
-                    }`}
+                    className="w-[18px] h-[18px] border-2 flex items-center justify-center transition-all"
+                    style={{
+                      background: showAdv
+                        ? "var(--color-recoup-ember)"
+                        : "transparent",
+                      borderColor: showAdv
+                        ? "var(--color-recoup-ember)"
+                        : "var(--color-recoup-muted2)",
+                    }}
                   >
                     {showAdv && (
-                      <span className="text-white text-[11px] font-extrabold">
+                      <span
+                        className="text-[11px] font-extrabold"
+                        style={{ color: "var(--color-recoup-ink)" }}
+                      >
                         ✓
                       </span>
                     )}
                   </div>
-                  <span className="text-[14px] font-medium text-recoup-black">
-                    I want my money now
+                  <span
+                    className="text-[13px] font-medium"
+                    style={{
+                      fontFamily: "var(--font-mono)",
+                      color: "var(--color-recoup-ink)",
+                      letterSpacing: "0.02em",
+                    }}
+                  >
+                    I want my money now (Track C)
                   </span>
                 </button>
 
                 {showAdv && (
-                  <div className="mt-8 pt-8 border-t border-recoup-border">
-                    <p className="text-[14px] text-recoup-gray mb-2">
-                      Advance amount (85%)
-                    </p>
-                    <div
-                      className="text-[48px] sm:text-[56px] font-normal text-recoup-black"
+                  <div
+                    className="mt-10 pt-10 border-t text-left"
+                    style={{ borderColor: "var(--color-recoup-line-soft)" }}
+                  >
+                    <p
+                      className="text-[11px] tracking-[0.18em] uppercase mb-6 text-center"
                       style={{
-                        fontFamily: "var(--font-serif)",
-                        letterSpacing: -1.5,
+                        fontFamily: "var(--font-mono)",
+                        color: "var(--color-recoup-ember)",
                       }}
                     >
-                      {fmt(advance)}
-                    </div>
-                    <p className="text-[14px] text-recoup-gray2 mt-2">
-                      Deposited in days, not months
+                      Cash Now breakdown
                     </p>
+                    <div
+                      className="space-y-4"
+                      style={{ fontFamily: "var(--font-mono)" }}
+                    >
+                      {[
+                        [
+                          "Advance (85% of refund)",
+                          fmt(advance),
+                          "paid to you within 72 hours",
+                        ],
+                        [
+                          `Cash Now fee (${Math.round(
+                            advanceFeeRate * 100
+                          )}% of advance)`,
+                          "−" + fmt(advanceFee),
+                          refund <= 50_000
+                            ? "tier 1 · refunds up to $50k"
+                            : refund <= 250_000
+                            ? "tier 2 · refunds $50k–$250k"
+                            : "tier 3 · refunds above $250k",
+                        ],
+                      ].map(([label, value, sub]) => (
+                        <div
+                          key={label}
+                          className="flex items-baseline justify-between py-3 border-b"
+                          style={{
+                            borderColor: "var(--color-recoup-line-soft)",
+                          }}
+                        >
+                          <div
+                            className="text-[12px]"
+                            style={{ color: "var(--color-recoup-muted)" }}
+                          >
+                            {label}
+                            <span
+                              className="block text-[10px] mt-0.5"
+                              style={{ color: "var(--color-recoup-muted2)" }}
+                            >
+                              {sub}
+                            </span>
+                          </div>
+                          <div
+                            className="text-[14px]"
+                            style={{ color: "var(--color-recoup-ink)" }}
+                          >
+                            {value}
+                          </div>
+                        </div>
+                      ))}
+                      <div className="flex items-baseline justify-between pt-4">
+                        <div
+                          className="text-[12px] uppercase tracking-[0.14em]"
+                          style={{ color: "var(--color-recoup-ink)" }}
+                        >
+                          You walk away with
+                        </div>
+                        <div
+                          className="text-[32px] sm:text-[40px] leading-none"
+                          style={{
+                            fontFamily: "var(--font-display)",
+                            color: "var(--color-recoup-ember)",
+                            letterSpacing: -1,
+                          }}
+                        >
+                          {fmt(cashToYou)}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                <div className="mt-10">
+                <div className="mt-12">
                   <Button
-                    href={`/apply?estimate=${Math.round(refund)}`}
+                    href={`/apply?track=${
+                      showAdv ? "advance" : "filing"
+                    }&estimate=${Math.round(refund)}`}
                     variant="dark"
                     className="!px-10 !py-4 !text-base"
                   >
-                    {showAdv ? "Apply for advance →" : "Start my filing →"}
+                    {showAdv ? "Apply for Cash Now →" : "Start my filing →"}
                   </Button>
                 </div>
               </div>

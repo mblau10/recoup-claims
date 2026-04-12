@@ -47,7 +47,7 @@ export default function Hero() {
                     color: "var(--color-recoup-ink)",
                   }}
                 >
-                  FILE NO. 01 · IEEPA REFUND RECOVERY
+                  IEEPA tariff refund recovery · CAPE portal
                 </span>
               </div>
             </FadeIn>
@@ -79,7 +79,7 @@ export default function Hero() {
                 className="text-[17px] sm:text-[19px] leading-[1.55] max-w-[560px] mb-10"
                 style={{ color: "var(--color-recoup-muted)" }}
               >
-                A federal court ruled IEEPA tariffs unlawful. CBP&rsquo;s CAPE
+                A federal court ruled IEEPA tariffs unlawful. CBP's CAPE
                 portal is now accepting refund declarations. We file yours with
                 <span
                   style={{
@@ -148,8 +148,8 @@ export default function Hero() {
                     color: "var(--color-recoup-muted2)",
                   }}
                 >
-                  <span>RECOUP / RECEIPT</span>
-                  <span>#001</span>
+                  <span>ENGAGEMENT SUMMARY</span>
+                  <span>Today</span>
                 </div>
 
                 <p

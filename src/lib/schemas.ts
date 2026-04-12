@@ -24,27 +24,33 @@ export const importStepSchema = z.object({
   hasEntryNumbers: z.enum(["yes", "no"]),
 });
 
+// Updated — new track-based model (no tiers)
 export const planStepSchema = z.object({
-  tier: z.enum(["essentials", "full_filing", "priority"]),
-  wantsAdvance: z.boolean(),
+  track: z.enum(["filing", "advance", "both"]),
+  acceptsEngagement: z.boolean().refine((v) => v === true, {
+    message: "You must accept the engagement terms to continue",
+  }),
 });
+
+// Kept as alias so any lingering imports don't break
+export const trackStepSchema = planStepSchema;
 
 export const advanceSchema = z.object({
   applicationId: z.string().uuid("Invalid application ID"),
   bankName: z.string().min(2, "Bank name must be at least 2 characters"),
-  routingNumber: z
-    .string()
-    .length(9, "Routing number must be exactly 9 digits")
-    .regex(/^\d+$/, "Routing number must contain only digits"),
-  accountNumber: z
-    .string()
-    .min(4, "Account number must be at least 4 characters")
-    .max(17, "Account number must be at most 17 characters")
-    .regex(/^\d+$/, "Account number must contain only digits"),
+  // NOTE: Routing and account numbers are collected directly by the user
+  // via our banking partner's hosted form — never transmitted through this API.
+  // This schema is retained for type-compat with legacy callers only.
+});
+
+export const kitEmailSchema = z.object({
+  email: z.string().email("Enter a valid email address"),
 });
 
 export type EstimateSchema = z.infer<typeof estimateSchema>;
 export type ContactStepSchema = z.infer<typeof contactStepSchema>;
 export type ImportStepSchema = z.infer<typeof importStepSchema>;
 export type PlanStepSchema = z.infer<typeof planStepSchema>;
+export type TrackStepSchema = PlanStepSchema;
 export type AdvanceSchema = z.infer<typeof advanceSchema>;
+export type KitEmailSchema = z.infer<typeof kitEmailSchema>;
